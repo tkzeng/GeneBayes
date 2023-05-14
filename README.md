@@ -1,10 +1,28 @@
 # GeneBayes
 
-GeneBayes is an Empirical Bayes framework that can be used to improve estimation of any gene property that one can relate to available data through a likelihood function. See XXX for an in-depth application of GeneBayes for gene constraint ($s_\text{het}) estimation, and XXX for additional example applications. 
+GeneBayes is an Empirical Bayes framework that can be used to improve estimation of any gene property that one can relate to available data through a likelihood function. See XXX for an in-depth application of GeneBayes for gene constraint ($s_\text{het}$) estimation, and XXX for additional example applications. 
 
 To estimate a gene property of interest using GeneBayes, one needs to specify a prior distribution and likelihood. Then, GeneBayes trains a machine learning model (gradient-boosted trees) to predict the parameters of the prior distribution by maximizing the likelihood of the data. Finally, GeneBayes computes a per-gene posterior distribution for the gene property of interest, returning a posterior mean and 95% credible interval for each gene.
 
-For details on estimating $s_\text{het}$ using GeneBayes, see the `s_het` directory. 
+## Setup
+
+* Create a `python` environment:  
+   ```
+   conda create --name genebayes python=3.9
+   ```
+* Install `xgboost`: https://xgboost.readthedocs.io/en/stable/install.html
+  * Installation with GPU support is recommended.
+* Install `ngboost`:
+   ```
+   git clone https://github.com/tkzeng/ngboost.git
+   pip install ngboost/
+   ```
+* Install `PyTorch`: https://pytorch.org/get-started/locally/
+  * Installation with GPU support is recommended.
+* Install `torchquad`:
+   ```
+   conda install torchquad -c conda-forge
+   ```
 
 ## Customizing GeneBayes for new gene properties
 
@@ -60,10 +78,11 @@ def likelihood(i, gene_property, y):
 After specifying a prior and likelihood, one can train a GeneBayes model by specifying arguments via command line. The positional arguments described below are required.
 
 ```
-usage: genebayes.custom_property.py [-h] [--n_integration_pts N_INTEGRATION_PTS] [--total_iterations TOTAL_ITERATIONS] [--train TRAIN] [--lr LR] [--max_depth MAX_DEPTH]
-                                    [--n_estimators N_ESTIMATORS] [--min_child_weight MIN_CHILD_WEIGHT] [--reg_alpha REG_ALPHA] [--reg_lambda REG_LAMBDA] [--subsample SUBSAMPLE]
-                                    response features out_prefix integration_lb integration_ub
-                             
+usage: genebayes.o_over_e.py [-h] [--gene_column GENE_COLUMN] [--n_integration_pts N_INTEGRATION_PTS] [--total_iterations TOTAL_ITERATIONS]
+                             [--early_stopping_iter EARLY_STOPPING_ITER] [--lr LR] [--max_depth MAX_DEPTH] [--n_trees_per_iteration N_ESTIMATORS]
+                             [--min_child_weight MIN_CHILD_WEIGHT] [--reg_alpha REG_ALPHA] [--reg_lambda REG_LAMBDA] [--subsample SUBSAMPLE]
+                             response features out_prefix integration_lb integration_ub
+
 positional arguments:
   response              tsv containing data that can be related to the gene property of interest through a likelihood function. Also known as y or dependent variable. Other
                         information necessary for computing the likelihood can also be included in this file.
@@ -74,18 +93,21 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
+  --gene_column GENE_COLUMN
+                        Name of the column containing gene names/IDs. If not specified, will look for 'ensg' and 'hgnc' columns. (default: None)
   --n_integration_pts N_INTEGRATION_PTS
                         Number of points for numerical integration. Larger values increase can improve accuracy but also increase training time and/or numerical instability.
-                        (default: 1000)
+                        (default: 1001)
   --total_iterations TOTAL_ITERATIONS
-                        Maximum number of iterations. The actual number of iterations may be lower if using early stopping (see the 'train' option) (default: 1000)
-  --train TRAIN         If True, then chromosomes 2, 4, 6 will be held out for validation and training will end when the loss on these chromosomes stops decreasing. Otherwise, the
-                        model will train on all genes for the number of iterations specified in 'total_iterations'. (default: True)
+                        Maximum number of iterations. The actual number of iterations may be lower if using early stopping (see the 'train' option) (default: 500)
+  --early_stopping_iter EARLY_STOPPING_ITER
+                        If >0, chromosomes 2, 4, 6 will be held out for validation and training will end when the loss on these chromosomes stops decreasing for the specified number
+                        of iterations. Otherwise, the model will train on all genes for the number of iterations specified in 'total_iterations'. (default: 10)
   --lr LR               Learning rate for NGBoost. Smaller values may improve accuracy but also increase training time. Typical values: 0.01 to 0.2. (default: 0.05)
   --max_depth MAX_DEPTH
                         XGBoost parameter. See https://xgboost.readthedocs.io/en/stable/python/python_api.html. (default: 3)
-  --n_estimators N_ESTIMATORS
-                        XGBoost parameter. (default: 1.0)
+  --n_trees_per_iteration N_ESTIMATORS
+                        XGBoost parameter, n_estimators (default: 1)
   --min_child_weight MIN_CHILD_WEIGHT
                         XGBoost parameter. (default: None)
   --reg_alpha REG_ALPHA
@@ -97,9 +119,39 @@ optional arguments:
 ```
 Next, we describe the required arguments in more detail.
 
-* `response`: The format of this file will depend on the likelihood. See XXX for an example. In the simplest case, this file will contain a single column, corresponding to a scalar response variable for each gene.
-* `features`: We support continuous and categorical features, including features with missing values for certain genes. Categorical features should be one-hot encoded. Features do not need to be scaled. In addition, we provide two pre-computed gene feature files:
-  * XXX (XXX in total): All features - includes gene expression levels, Gene Ontology terms, conservation across species, neural network embeddings of protein sequences, gene regulatory features, co-expression and protein-protein interaction features, sub-cellular localization, and intolerance to missense mutations.
-  * XXX (XXX in total): Subset of the first feature file - optimized for gene constraint estimation.
-  * See XXX, XXX for a description of the pre-computed features.
-* `integration_lb`, `integration_ub`: These arguments specify the range of values that GeneBayes will consider for the gene property of interest. We recommend for users to consider the range of values supported by their likelihood when choosing these parameters.
+`response`: The format of this file will depend on the likelihood. See XXX for an example. In the simplest case, this file will contain a single column, corresponding to a scalar response variable for each gene.
+
+`features`:
+  * We provide two pre-computed gene feature files (see XXX for a more detailed description):
+    * XXX (XXX in total): All features - includes gene expression levels, Gene Ontology terms, conservation across species, neural network embeddings of protein sequences, gene regulatory features, co-expression and protein-protein interaction features, sub-cellular localization, and intolerance to missense mutations. 
+    * XXX (XXX in total): Subset of the first feature file - optimized for gene constraint estimation.
+  * Custom features 
+    * GeneBayes supports continuous and categorical features, including features with missing values for certain genes. 
+      Categorical features should be one-hot encoded. 
+    * Features do not need to be scaled. 
+    * In addition to a column containing gene names, please include a column named `chrom` with the chromosome for each gene.
+
+`integration_lb`, `integration_ub`: These arguments specify the range of values that GeneBayes will consider for the gene property of interest. We recommend for users to consider the range of values supported by their likelihood when choosing these parameters.
+
+### Runtime
+
+Runtime primarily depends on  `total_iterations`, `lr`, and `n_integration_pts`. Generally, GeneBayes takes a few hours to train. Runtime is substantially lower when a GPU is available. 
+
+## Outputs
+
+First, GeneBayes outputs estimates of the gene property from the prior and posterior distributions.
+
+`{out_prefix}.per_gene_estimates.tsv`
+  * `gene_column`/`ensg`/`hgnc`: custom / Ensembl / HGNC gene IDs 
+  * `prior_mean`: mean of the learned prior
+  * `post_mean`: mean of the posterior
+  * `post_lower_95`: lower bound of the 95% credible interval
+  * `post_upper_95`: upper bound of the 95% credible interval
+
+Second, GeneBayes outputs feature importance scores that represent the influence of each feature on the prior. The importance score of a feature is calculated as the number of times the feature is used to split the data across all trees. Since each parameter in the prior is predicted by a separate gradient-boosted tree model, importance scores are provided for each parameter.
+
+`{out_prefix}.feature_importance.tsv`
+* `gene_column`/`ensg`/`hgnc`: custom / Ensembl / HGNC gene IDs 
+* `param0_importance`: feature importance score for the first parameter of the prior  
+    ...
+* `paramK_importance`: feature importance score for the last parameter of the prior, for K total parameters
