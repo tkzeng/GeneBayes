@@ -4,6 +4,8 @@ GeneBayes is an Empirical Bayes framework that can be used to improve estimation
 
 To estimate a gene property of interest using GeneBayes, one needs to specify a prior distribution and likelihood. Then, GeneBayes trains a machine learning model (gradient-boosted trees) to predict the parameters of the prior distribution by maximizing the likelihood of the data. Finally, GeneBayes computes a per-gene posterior distribution for the gene property of interest, returning a posterior mean and 95% credible interval for each gene.
 
+See the `s_het` directory for details on using GeneBayes to estimate $s_\text{het}$. 
+
 ## Setup
 
 * Create a `python` environment:  
