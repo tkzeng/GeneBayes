@@ -369,8 +369,6 @@ if __name__ == "__main__":
     ### train ###
     train_idx = ~feature_table["chrom"].isin(["chr1", "chr3", "chr5", "chr2", "chr4", "chr6"])
     val_idx = feature_table["chrom"].isin(["chr2", "chr4", "chr6"])
-    train_idx = feature_table["chrom"].isin(["chr22"])
-    val_idx = feature_table["chrom"].isin(["chr21"])
 
     X = feature_table.drop(["ensg", "hgnc", "chrom"], axis=1)
     X = X.to_numpy()

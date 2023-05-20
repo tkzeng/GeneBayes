@@ -317,17 +317,17 @@ if __name__ == "__main__":
 
     ### load likelihoods and training data ###
     feature_table = pd.read_csv(args.features, sep='\t')
-    y = pd.read_csv(args.response, sep='\t').to_numpy()
+    y = pd.read_csv(args.response, sep='\t')
+    y = y.loc[feature_table.index].reset_index(drop=True)
 
     ### train ###
     train_idx = ~feature_table["chrom"].isin(["chr2", "chr4", "chr6"])
     val_idx = feature_table["chrom"].isin(["chr2", "chr4", "chr6"])
-    train_idx = feature_table["chrom"].isin(["chr22"])
-    val_idx = feature_table["chrom"].isin(["chr21"])
 
-    X = feature_table.drop([x for x in [GENE_COLUMN, "ensg", "hgnc", "chrom"] if x in feature_table.columns],
-                            axis=1)
+    X = feature_table.drop([col for col in [GENE_COLUMN, "ensg", "hgnc", "chrom"] if col in feature_table.columns], axis=1)
+    y = y.drop([col for col in [GENE_COLUMN, "ensg", "hgnc", "chrom"] if col in y.columns], axis=1)
     X = X.to_numpy()
+    y = y.to_numpy()
 
     X_train, y_train = X[train_idx], y[train_idx.to_numpy()]
     X_val, y_val = X[val_idx], y[val_idx.to_numpy()]
