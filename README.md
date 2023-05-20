@@ -1,6 +1,6 @@
 # GeneBayes
 
-GeneBayes is an Empirical Bayes framework that can be used to improve estimation of any gene property that one can relate to available data through a likelihood function. See XXX for an in-depth application of GeneBayes for gene constraint ($s_\text{het}$) estimation, and XXX for additional example applications. 
+GeneBayes is an Empirical Bayes framework that can be used to improve estimation of any gene property that one can relate to available data through a likelihood function. See XXX for an in-depth application of GeneBayes for gene constraint ($s_\text{het}$) estimation. See below for additional example applications. 
 
 To estimate a gene property of interest using GeneBayes, one needs to specify a prior distribution and likelihood. Then, GeneBayes trains a machine learning model (gradient-boosted trees) to predict the parameters of the prior distribution by maximizing the likelihood of the data. Finally, GeneBayes computes a per-gene posterior distribution for the gene property of interest, returning a posterior mean and 95% credible interval for each gene.
 
@@ -157,3 +157,51 @@ Second, GeneBayes outputs feature importance scores that represent the influence
 * `param0_importance`: feature importance score for the first parameter of the prior  
     ...
 * `paramK_importance`: feature importance score for the last parameter of the prior, for K total parameters
+
+## Example applications
+
+### Differential expression
+
+In this example, users have estimates of log-fold changes in gene expression between conditions and their standard errors from a differential expression workflow, and would like to estimate log-fold changes with greater power (e.g. for lowly-expressed genes with noisy estimates).
+
+#### Likelihood
+
+We define $\ell_\text{DE}^{(i)}$ and $\ell_i$ as the estimated and true log-fold change in expression respectively for gene $i$, and $s_i$ as the standard error for the estimate. Then, we define the likelihood for $\ell_i$ as
+
+$$\ell_\text{DE}^{(i)} \mid \ell_i \sim \text{Normal}(\ell_i, s_i^2)$$
+
+#### Prior
+
+We describe two potential priors that one may choose to try. The first is a normal prior with parameters $\mu_i$ and $\sigma_i$:
+
+$$\ell_i \sim \text{Normal}(\mu_i, \sigma_i^2)$$
+
+The second is a spike-and-slab prior with parameters $\pi_i$, $\mu_i$, and $\sigma_i$, which assumes that gene $i$ only has a $\pi_i$ probability of being differentially expressed:
+
+$$
+\begin{split}
+z_i &\sim \text{Bernoulli}(\pi_i) \\
+\ell_i | z_i &\sim
+\begin{cases}
+0, & \text{if}\ z_i=0 \\
+\text{Normal}(\mu_i, \sigma_i^2), & \text{if}\ z_i=1
+\end{cases}
+\end{split}
+$$
+
+### Variant burden tests
+
+In this example, users have sequencing data from patients with a disease or (if calling *de novo* mutations) sequencing data from family trios, and would like to identify genes with excess mutational burden in patients (e.g. an excess of missense or LOF variants). One approach is to infer the relative risk for each gene (denoted as $\gamma_i$ for gene $i$), defined as the expected ratio of the number of variants in patients to the number of variants in healthy individuals.
+
+#### Likelihood 
+
+Let $E_i$ be the number of variants we expect to observe for gene $i$ given the study sample size and sequence-dependent mutation rates (e.g. expected counts obtained using the mutational model developed by [Samocha et al. 2014](https://www.nature.com/articles/ng.3050)). Next, let $O_i$ be the number of variants observed in patients for gene $i$. Then, we define the likelihood for $\eta_i$ as 
+
+$$O_i\mid\eta_i \sim \text{Poisson}(\eta_i E_i)$$
+
+#### Prior
+
+Because $\eta_i$ is non-negative, one may want to choose a gamma prior with parameters $\alpha_i$ and $\beta_i$:
+
+$$\eta_i \sim \text{Gamma}(\alpha_i, \beta_i)$$
+
