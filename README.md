@@ -1,6 +1,6 @@
 # GeneBayes
 
-GeneBayes is an Empirical Bayes framework that can be used to improve estimation of any gene property that one can relate to available data through a likelihood function. See XXX for an in-depth application of GeneBayes for gene constraint ($s_\text{het}$) estimation. See below for additional example applications. 
+GeneBayes is an Empirical Bayes framework that can be used to improve estimation of any gene property that one can relate to available data through a likelihood function. See [Zeng et al. 2023](https://www.biorxiv.org/content/10.1101/2023.05.19.541520v1) for an in-depth application of GeneBayes for gene constraint ($s_\text{het}$) estimation. See below for additional example applications. 
 
 To estimate a gene property of interest using GeneBayes, one needs to specify a prior distribution and likelihood. Then, GeneBayes trains a machine learning model (gradient-boosted trees) to predict the parameters of the prior distribution by maximizing the likelihood of the data. Finally, GeneBayes computes a per-gene posterior distribution for the gene property of interest, returning a posterior mean and 95% credible interval for each gene.
 
@@ -124,9 +124,9 @@ Next, we describe the required arguments in more detail.
 `response`: The format of this file will depend on the likelihood. See `examples/number_of_obs_and_exp_lofs.tsv` for an example. In the simplest case, this file will contain a single column, corresponding to a scalar response variable for each gene.
 
 `features`:
-  * We provide two pre-computed gene feature files (see [feature_list.xlsx](https://zenodo.org/api/files/91395a01-0e19-4b43-8bd1-f08f0b0afcf6/feature_list.xlsx?versionId=3a69d74a-52a3-47b2-9239-be031f9f714f) for a more detailed description):
-    * [all_gene_features.tsv.gz](https://zenodo.org/api/files/91395a01-0e19-4b43-8bd1-f08f0b0afcf6/all_gene_features.tsv.gz?versionId=22f8c5ac-ed90-4616-bbed-bb415dececb7) (65,383 features): All features - includes gene expression levels, Gene Ontology terms, conservation across species, neural network embeddings of protein sequences, gene regulatory features, co-expression and protein-protein interaction features, sub-cellular localization, and intolerance to missense mutations. 
-    * [gene_features_for_s_het.tsv.gz](https://zenodo.org/api/files/91395a01-0e19-4b43-8bd1-f08f0b0afcf6/gene_features_for_s_het.tsv.gz?versionId=e01477ed-dfea-41a9-8cd8-4414447dd666) (1,248 features): Subset of the first feature file - optimized for gene constraint estimation.
+  * We provide two pre-computed gene feature files (see [feature_list.xlsx](https://zenodo.org/record/7939768/files/feature_list.xlsx?download=1) for a more detailed description):
+    * [all_gene_features.tsv.gz](https://zenodo.org/record/7939768/files/all_gene_features.tsv.gz?download=1) (65,383 features): All features - includes gene expression levels, Gene Ontology terms, conservation across species, neural network embeddings of protein sequences, gene regulatory features, co-expression and protein-protein interaction features, sub-cellular localization, and intolerance to missense mutations. 
+    * [gene_features_for_s_het.tsv.gz](https://zenodo.org/record/7939768/files/gene_features_for_s_het.tsv.gz?download=1) (1,248 features): Subset of the first feature file - optimized for gene constraint estimation.
   * Custom features 
     * GeneBayes supports continuous and categorical features, including features with missing values for certain genes. 
       Categorical features should be one-hot encoded. 
