@@ -21,10 +21,6 @@ See the `s_het` directory for details on using GeneBayes to estimate $s_\text{he
    ```
 * Install `PyTorch`: https://pytorch.org/get-started/locally/
   * Installation with GPU support is recommended.
-* Install `torchquad`:
-   ```
-   conda install torchquad -c conda-forge
-   ```
 
 ## Customizing GeneBayes for new gene properties
 
