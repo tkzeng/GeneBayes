@@ -42,16 +42,21 @@ Example: Beta distribution
 ```
 class Prior(RegressionDistn):
     n_params = 2
-    
-    # both params need to be >0
     positive = np.array([True, True])
-   
-    ...
+    scores = [PriorScore]
+
+    def __init__(self, params):
+        self._params = params
+        self.params_transf = np.copy(params)
+        self.params_transf[Prior.positive] = np.exp(self.params_transf[Prior.positive])
     
+    @staticmethod
     def distribution(params):
-        alpha = params[0] 
-        beta = params[1]
-        return torch.distributions.Beta(alpha, beta)
+        """
+        Beta distribution
+        alpha = params[0], beta = params[1]
+        """
+        return dist.Beta(params[0], params[1])
 ```
 
 ### Likelihood
@@ -73,37 +78,79 @@ def likelihood(i, gene_property, y):
 
 ## Training a GeneBayes model
 
-After specifying a prior and likelihood, one can train a GeneBayes model by specifying arguments via command line. The positional arguments described below are required.
+After specifying a prior and likelihood, one can train a GeneBayes model by specifying arguments via command line. The required arguments described below must be provided.
+
+### Example Usage
+
+```bash
+# example_features_v1.tsv contains o/e as a feature -- this is to make sure the optimization is working properly
+python examples/genebayes.o_over_e.py \
+  --response examples/number_of_obs_and_exp_lofs.tsv \
+  --features examples/example_features_v1.tsv \
+  --out test \
+  --integration_lb 0.001 \
+  --integration_ub 0.999 \
+  --lr 0.3
+```
 
 ```
-usage: genebayes.o_over_e.py [-h] [--gene_column GENE_COLUMN] [--n_integration_pts N_INTEGRATION_PTS] [--total_iterations TOTAL_ITERATIONS]
-                             [--early_stopping_iter EARLY_STOPPING_ITER] [--lr LR] [--max_depth MAX_DEPTH] [--n_trees_per_iteration N_ESTIMATORS]
-                             [--min_child_weight MIN_CHILD_WEIGHT] [--reg_alpha REG_ALPHA] [--reg_lambda REG_LAMBDA] [--subsample SUBSAMPLE]
-                             response features out_prefix integration_lb integration_ub
+usage: genebayes.o_over_e.py [-h] [--gene_column GENE_COLUMN]
+                             [--n_integration_pts N_INTEGRATION_PTS]
+                             [--total_iterations TOTAL_ITERATIONS]
+                             [--early_stopping_iter EARLY_STOPPING_ITER]
+                             [--lr LR] [--max_depth MAX_DEPTH]
+                             [--n_trees_per_iteration N_ESTIMATORS]
+                             [--min_child_weight MIN_CHILD_WEIGHT]
+                             [--reg_alpha REG_ALPHA] [--reg_lambda REG_LAMBDA]
+                             [--subsample SUBSAMPLE] [--batch_size BATCH_SIZE]
+                             --response RESPONSE --features FEATURES --out OUT_PREFIX
+                             --integration_lb INTEGRATION_LB
+                             --integration_ub INTEGRATION_UB
 
-positional arguments:
-  response              tsv containing data that can be related to the gene property of interest through a likelihood function. Also known as y or dependent variable. Other
-                        information necessary for computing the likelihood can also be included in this file.
-  features              tsv containing gene features. Also known as X or independent variables.
-  out_prefix            Prefix for the output files.
-  integration_lb        Lower bound for numerical integration - the smallest value that you expect for the gene property of interest.
-  integration_ub        Upper bound for numerical integration - the largest value you expect for the gene property of interest.
+required arguments:
+  --response RESPONSE   tsv containing data that can be related to the gene
+                        property of interest through a likelihood function.
+                        Also known as y or dependent variable. Other
+                        information necessary for computing the likelihood can
+                        also be included in this file.
+  --features FEATURES   tsv containing gene features. Also known as X or
+                        independent variables.
+  --out OUT_PREFIX      Prefix for the output files.
+  --integration_lb INTEGRATION_LB
+                        Lower bound for numerical integration - the smallest
+                        value that you expect for the gene property of
+                        interest.
+  --integration_ub INTEGRATION_UB
+                        Upper bound for numerical integration - the largest
+                        value you expect for the gene property of interest.
 
 optional arguments:
   -h, --help            show this help message and exit
   --gene_column GENE_COLUMN
-                        Name of the column containing gene names/IDs. If not specified, will look for 'ensg' and 'hgnc' columns. (default: None)
+                        Name of the column containing gene names/IDs. If not
+                        specified, will look for 'ensg' and 'hgnc' columns.
+                        (default: None)
   --n_integration_pts N_INTEGRATION_PTS
-                        Number of points for numerical integration. Larger values increase can improve accuracy but also increase training time and/or numerical instability.
-                        (default: 1001)
+                        Number of points for numerical integration. Larger
+                        values can improve accuracy but also increase training
+                        time and/or numerical instability. (default: 1001)
   --total_iterations TOTAL_ITERATIONS
-                        Maximum number of iterations. The actual number of iterations may be lower if using early stopping (see the 'train' option) (default: 500)
+                        Maximum number of iterations. The actual number of
+                        iterations may be lower if using early stopping.
+                        (default: 500)
   --early_stopping_iter EARLY_STOPPING_ITER
-                        If >0, chromosomes 2, 4, 6 will be held out for validation and training will end when the loss on these chromosomes stops decreasing for the specified number
-                        of iterations. Otherwise, the model will train on all genes for the number of iterations specified in 'total_iterations'. (default: 10)
-  --lr LR               Learning rate for NGBoost. Smaller values may improve accuracy but also increase training time. Typical values: 0.01 to 0.2. (default: 0.05)
+                        If >0, chromosomes 2, 4, 6 will be held out for
+                        validation and training will end when the loss on
+                        these chromosomes stops decreasing for the specified
+                        number of iterations. Otherwise, the model will train
+                        on all genes for the number of iterations specified in
+                        'total_iterations'. (default: 10)
+  --lr LR               Learning rate for NGBoost. Smaller values may improve
+                        accuracy but also increase training time. Typical
+                        values: 0.01 to 0.2. (default: 0.05)
   --max_depth MAX_DEPTH
-                        XGBoost parameter. See https://xgboost.readthedocs.io/en/stable/python/python_api.html. (default: 3)
+                        XGBoost parameter. See https://xgboost.readthedocs.io/
+                        en/stable/python/python_api.html. (default: 3)
   --n_trees_per_iteration N_ESTIMATORS
                         XGBoost parameter, n_estimators (default: 1)
   --min_child_weight MIN_CHILD_WEIGHT
@@ -114,22 +161,26 @@ optional arguments:
                         XGBoost parameter. (default: None)
   --subsample SUBSAMPLE
                         XGBoost parameter. (default: None)
+  --batch_size BATCH_SIZE
+                        Batch size for integration. Larger values can improve
+                        speed but use more memory. (default: 32)
 ```
 Next, we describe the required arguments in more detail.
 
-`response`: The format of this file will depend on the likelihood. See `examples/number_of_obs_and_exp_lofs.tsv` for an example. In the simplest case, this file will contain a single column, corresponding to a scalar response variable for each gene.
+`--response`: The format of this file will depend on the likelihood. See `examples/number_of_obs_and_exp_lofs.tsv` for an example. In the simplest case, this file will contain a single column, corresponding to a scalar response variable for each gene.
 
-`features`:
-  * We provide two pre-computed gene feature files (see [feature_list.xlsx](https://zenodo.org/record/7939768/files/feature_list.xlsx?download=1) for a more detailed description):
-    * [all_gene_features.tsv.gz](https://zenodo.org/record/7939768/files/all_gene_features.tsv.gz?download=1) (65,383 features): All features - includes gene expression levels, Gene Ontology terms, conservation across species, neural network embeddings of protein sequences, gene regulatory features, co-expression and protein-protein interaction features, sub-cellular localization, and intolerance to missense mutations. 
-    * [gene_features_for_s_het.tsv.gz](https://zenodo.org/record/7939768/files/gene_features_for_s_het.tsv.gz?download=1) (1,248 features): Subset of the first feature file - optimized for gene constraint estimation.
+`--features`:
+  * We provide two pre-computed gene feature files at https://doi.org/10.5281/zenodo.7939767:
+    * `all_gene_features.tsv.gz` (65,383 features): All features - includes gene expression levels, Gene Ontology terms, conservation across species, neural network embeddings of protein sequences, gene regulatory features, co-expression and protein-protein interaction features, sub-cellular localization, and intolerance to missense mutations. 
+    * `gene_features_for_s_het.tsv.gz` (1,248 features): Subset of the first feature file - optimized for gene constraint estimation.
+    * `feature_list.xlsx`: Detailed description of all features.
   * Custom features 
     * GeneBayes supports continuous and categorical features, including features with missing values for certain genes. 
       Categorical features should be one-hot encoded. 
     * Features do not need to be scaled. 
     * In addition to a column containing gene names, please include a column named `chrom` with the chromosome for each gene.
 
-`integration_lb`, `integration_ub`: These arguments specify the range of values that GeneBayes will consider for the gene property of interest. We recommend for users to consider the range of values supported by their likelihood when choosing these parameters.
+`--integration_lb`, `--integration_ub`: These arguments specify the range of values that GeneBayes will consider for the gene property of interest. We recommend for users to consider the range of values supported by their likelihood when choosing these parameters.
 
 ### Runtime
 
