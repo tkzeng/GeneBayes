@@ -455,8 +455,10 @@ if __name__ == "__main__":
     xgb_params = {k: v for k, v in xgb_params.items() if v is not None}
 
     if not torch.cuda.is_available():
+        print("GPU not available, using CPU (hist) for XGBoost")
         learner = xgb.XGBRegressor(tree_method="hist", **xgb_params)
     else:
+        print("GPU available, using GPU (gpu_hist) for XGBoost")
         learner = xgb.XGBRegressor(gpu_id=0, tree_method="gpu_hist", **xgb_params)
 
     if args.early_stopping_iter > 0:

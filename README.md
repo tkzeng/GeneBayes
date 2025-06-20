@@ -12,8 +12,10 @@ See the `s_het` directory for details on using GeneBayes to estimate $s_\text{he
    ```
    conda create --name genebayes python=3.9
    ```
-* Install `xgboost`: https://xgboost.readthedocs.io/en/stable/install.html
-  * Installation with GPU support is recommended.
+* Install `xgboost` (latest version < 2):
+   ```
+   pip install xgboost==1.7.6
+   ```
 * Install `ngboost`:
    ```
    git clone https://github.com/tkzeng/ngboost.git
